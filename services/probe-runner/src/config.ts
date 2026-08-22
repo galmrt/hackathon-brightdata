@@ -74,7 +74,7 @@ export const config = {
       return requireEnv("BRIGHTDATA_ZONE_PASSWORD");
     },
     proxyHost: process.env.BRIGHTDATA_PROXY_HOST || "brd.superproxy.io",
-    proxyPort: process.env.BRIGHTDATA_PROXY_PORT || "22225",
+    proxyPort: process.env.BRIGHTDATA_PROXY_PORT || "44445",
   },
   signoz: {
     endpoint: process.env.SIGNOZ_ENDPOINT,
