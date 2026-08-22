@@ -5,6 +5,7 @@ import { proxyAgentForRegion } from "./proxy.js";
 import { runAssertions } from "./assertions.js";
 import type { AssertionResult } from "./assertions.js";
 import type { AssertionSuite, Region } from "./config.js";
+import { injectFault, shouldInjectFault } from "./fault.js";
 
 export interface RegionProbeResult {
   region: Region;
@@ -45,7 +46,11 @@ export async function runRegionProbe(
       const dispatcher = proxyAgentForRegion(region);
       const response = await request(suite.targetUrl, { dispatcher });
       httpStatus = response.statusCode;
-      const html = await response.body.text();
+      let html = await response.body.text();
+      if (shouldInjectFault(region)) {
+        html = injectFault(region, html);
+        span.setAttribute("watchtower.fault_injected", true);
+      }
       assertions = runAssertions(html, suite.assertions);
     } catch (error) {
       fetchError = error instanceof Error ? error.message : String(error);

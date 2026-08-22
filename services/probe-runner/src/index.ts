@@ -3,12 +3,22 @@ import { runRegionProbe, summarizeRun } from "./runProbe.js";
 import { decide } from "./decision.js";
 import { draftRepairDescription } from "./repair.js";
 import { loadDeployState } from "./deployState.js";
+import { FAULT_ENV_VAR, faultTargetRegionId } from "./fault.js";
 import { postToPort } from "./port.js";
 import { shutdownTracing } from "./otel.js";
 
 async function main() {
   const regions = loadRegions();
   const suite = loadAssertionSuite();
+
+  const faultTarget = faultTargetRegionId();
+  if (faultTarget && !regions.some((r) => r.id === faultTarget)) {
+    // A typo'd region id would silently break nothing and the demo would
+    // show healthy — fail fast instead.
+    throw new Error(
+      `${FAULT_ENV_VAR}="${faultTarget}" matches no region id (known: ${regions.map((r) => r.id).join(", ")})`,
+    );
+  }
 
   console.log(`[probe-runner] probing ${suite.targetUrl} from ${regions.length} region(s)...`);
 
