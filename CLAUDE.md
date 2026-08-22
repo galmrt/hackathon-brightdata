@@ -30,13 +30,15 @@ The demo has two acts: (1) ship a visible cosmetic change to the demo app, watch
 .env.example                # documents required env vars (never commit the real .env)
 ```
 
-Nothing above exists yet except this file and `.gitignore` — build it phase by phase per the plan in §5.
+Status: `/apps/demo-app` and `.env.example` now exist (Phase 1 done — see §5). Everything else is still to be built phase by phase per the plan in §5.
 
 ## 3. Tech stack & conventions
 
 - **Language**: TypeScript/Node.js everywhere (demo app, probe runner, decision logic) for consistency with Bright Data's CLI and the OpenTelemetry JS SDK.
 - **Package manager**: npm. Don't introduce pnpm/yarn mid-hackathon.
 - **Demo app**: keep it to 2-3 interactive elements (e.g. a "buy" button, a price element, a hero heading) — just enough surface area to assert against and to visibly break on purpose. Plain HTML/CSS/vanilla JS behind a minimal Express static server is preferable to a framework here; we don't need SSR or routing, and framework build steps are pure risk on a one-day clock. **Must be deployed somewhere public** (Vercel free tier is the fastest path) — Bright Data's regional proxies need a real public URL, not localhost.
+  - **Deployed** (Phase 1, done): `apps/demo-app` is live at `https://watchtower-gilt.vercel.app` (Vercel project `galmrts-projects/watchtower`), also recorded as `DEMO_APP_URL` in `.env.example`. Elements use stable `data-testid` attributes (`hero-heading`, `product-card`, `price-value`, `buy-button`, `buy-status`) so structural probes survive a pure CSS class rename — that's the intended Act 1 cosmetic-drift surface.
+  - **Vercel gotcha**: `apps/demo-app/vercel.json` must set `"framework": null`. Without it, Vercel's zero-config detection sees `express` in `package.json` + a root `server.js` and tries to build `public/` as a serverless Express entrypoint instead of serving it as static files, which fails with "No entrypoint found in output directory." `server.js` is for local dev only (`npm start`); production serves `public/` as static content via `outputDirectory`. Redeploy with `npx vercel --prod` from `apps/demo-app` (reuses the linked project, updates the same URL — do NOT use a plain `vercel deploy` without `--prod` for anything that needs a stable URL, since that mints a new unique URL each time and would break the Act 1 demo where probes must keep hitting the same URL across a redeploy).
 - **Probe runner**: one script, run on a schedule (cron or manual trigger during demo), that (a) calls Bright Data for each configured region, (b) runs content assertions against the response, (c) emits one OpenTelemetry span per region per assertion, (d) posts a structured result to Port's workflow webhook.
 - **Assertions**: prefer structural/semantic checks ("is there still an element that looks like the buy button, roughly here, with similar text") over a single brittle CSS selector — the whole thesis is that selectors alone are too fragile to trust blindly.
 - **Decision logic**: keep it a simple, explainable scoring function (region-agreement + deploy-recency + content-diff heuristic), not a black box. Judges and operators should be able to see *why* it chose auto-heal vs. escalate — that's the actual deliverable, not the button.
@@ -53,8 +55,8 @@ Nothing above exists yet except this file and `.gitignore` — build it phase by
 
 ## 5. Build plan (phased against today's schedule)
 
-- [ ] **Workshops (10:00-11:00)**: get Bright Data API token + confirm CLI auth works; confirm SigNoz ingestion endpoint (self-hosted or cloud) and get an API key if needed; create the Port workspace and skim AI Builder's Plan/Build modes.
-- [ ] **Phase 1 (11:00-12:00)**: scaffold `/apps/demo-app`, deploy it publicly (Vercel), confirm it's reachable.
+- [ ] **Workshops (10:00-11:00)**: get Bright Data API token + confirm CLI auth works; confirm SigNoz ingestion endpoint (self-hosted or cloud) and get an API key if needed; create the Port workspace and skim AI Builder's Plan/Build modes. **Not done yet** — still needed before Phase 2 can start for real.
+- [x] **Phase 1 (11:00-12:00)**: scaffold `/apps/demo-app`, deploy it publicly (Vercel), confirm it's reachable. **Done** — live at `https://watchtower-gilt.vercel.app`, verified rendering correctly. See the Vercel gotcha note in §3.
 - [ ] **Phase 2 (12:00-13:00)**: build 1-2 Bright Data probes against the demo app from 2-3 regions; build `/services/probe-runner`; instrument with OpenTelemetry; confirm traces land in SigNoz; build one dashboard (pass/fail per region, latency).
 - [ ] **Phase 3 (13:00-14:00)**: wire a SigNoz alert to a Port workflow webhook; model `Probe` / `ProbeRun` / `Incident` blueprints in Port; build the confidence-scoring workflow step.
 - [ ] **Pizza (14:00)** — keep going after.
