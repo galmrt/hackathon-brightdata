@@ -1,0 +1,32 @@
+{
+  "identifier": "watchtowerProbe",
+  "title": "Probe",
+  "icon": "Monitor",
+  "description": "A configured Watchtower target: the demo app URL plus the assertion suite and logical regions it's checked from. One entity per probes/demo-app.assertions.json.",
+  "schema": {
+    "properties": {
+      "targetUrl": {
+        "type": "string",
+        "format": "url",
+        "title": "Target URL"
+      },
+      "description": {
+        "type": "string",
+        "title": "Description"
+      },
+      "regionIds": {
+        "type": "array",
+        "title": "Region IDs",
+        "items": { "type": "string" }
+      },
+      "assertionCount": {
+        "type": "number",
+        "title": "Assertion Count"
+      }
+    },
+    "required": ["targetUrl"]
+  },
+  "mirrorProperties": {},
+  "calculationProperties": {},
+  "relations": {}
+}

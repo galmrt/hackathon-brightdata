@@ -1,0 +1,49 @@
+{
+  "_comment": "DRAFT, unverified against a live Port workspace — no PORT_WEBHOOK_URL/API token exists yet (CLAUDE.md §5 Phase 3 blocker). This sketches the JQ entity-mapping shape Port's 'Ingest Data -> Webhook' integration uses, based on the payload services/probe-runner/src/port.ts already posts (PortProbeRunPayload = ProbeRunSummary & { decision: DecisionResult }). Paste/adapt this in the Port UI once the webhook data source exists, then correct this file to match what Port actually accepted — don't trust this blindly.",
+  "integration": {
+    "type": "webhook",
+    "config": {
+      "mappings": [
+        {
+          "blueprint": "watchtowerProbeRun",
+          "filter": "true",
+          "entity": {
+            "identifier": ".body.runId",
+            "title": "\"run \" + .body.runId",
+            "properties": {
+              "timestamp": ".body.timestamp",
+              "targetUrl": ".body.targetUrl",
+              "regionsPassed": ".body.regionsPassed",
+              "regionsTotal": ".body.regionsTotal",
+              "regionAgreement": ".body.regionAgreement",
+              "decision": ".body.decision.decision",
+              "confidence": ".body.decision.confidence",
+              "reasons": ".body.decision.reasons",
+              "minutesSinceDeploy": ".body.decision.signals.minutesSinceDeploy",
+              "rawResults": ".body.results"
+            },
+            "relations": {}
+          }
+        },
+        {
+          "blueprint": "watchtowerIncident",
+          "filter": ".body.decision.decision != \"healthy\"",
+          "entity": {
+            "identifier": "\"incident-\" + .body.runId",
+            "title": "\"Incident: \" + .body.decision.decision + \" (\" + .body.runId + \")\"",
+            "properties": {
+              "status": "if .body.decision.decision == \"auto-heal-candidate\" then \"auto_heal_pending_approval\" else \"escalated\" end",
+              "decision": ".body.decision.decision",
+              "confidence": ".body.decision.confidence",
+              "reasons": ".body.decision.reasons",
+              "openedAt": ".body.timestamp"
+            },
+            "relations": {
+              "triggeringRun": ".body.runId"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

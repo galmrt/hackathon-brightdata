@@ -1,0 +1,82 @@
+{
+  "identifier": "watchtowerIncident",
+  "title": "Incident",
+  "icon": "Alert",
+  "description": "Opened whenever a Probe Run's decision != healthy. Carries the human-in-the-loop state for both branches from CLAUDE.md §1/§4: auto-heal-candidate (agent drafts a repair prompt, human approves the Bright Data self-heal diff before it ships) and escalate (paged immediately, auto-heal never attempted).",
+  "schema": {
+    "properties": {
+      "status": {
+        "type": "string",
+        "title": "Status",
+        "enum": [
+          "open",
+          "auto_heal_pending_approval",
+          "auto_heal_approved",
+          "auto_heal_declined",
+          "resolved",
+          "escalated"
+        ],
+        "enumColors": {
+          "open": "red",
+          "auto_heal_pending_approval": "yellow",
+          "auto_heal_approved": "blue",
+          "auto_heal_declined": "red",
+          "resolved": "green",
+          "escalated": "red"
+        },
+        "default": "open"
+      },
+      "decision": {
+        "type": "string",
+        "title": "Decision",
+        "enum": ["auto-heal-candidate", "escalate"],
+        "description": "Mirrors the triggering Probe Run's decision at the time this incident was opened."
+      },
+      "confidence": {
+        "type": "number",
+        "title": "Drift Confidence"
+      },
+      "reasons": {
+        "type": "array",
+        "title": "Reasons",
+        "items": { "type": "string" }
+      },
+      "repairDescription": {
+        "type": "string",
+        "title": "Repair Description",
+        "description": "Natural-language description of what changed, generated for Bright Data's self-heal flow (Scraper Studio only takes a description, not an automatic diff — see CLAUDE.md §4). Only populated on the auto-heal-candidate branch."
+      },
+      "approvedBy": {
+        "type": "string",
+        "title": "Approved By"
+      },
+      "openedAt": {
+        "type": "string",
+        "format": "date-time",
+        "title": "Opened At"
+      },
+      "resolvedAt": {
+        "type": "string",
+        "format": "date-time",
+        "title": "Resolved At"
+      }
+    },
+    "required": ["status", "decision", "openedAt"]
+  },
+  "mirrorProperties": {},
+  "calculationProperties": {},
+  "relations": {
+    "triggeringRun": {
+      "title": "Triggering Probe Run",
+      "target": "watchtowerProbeRun",
+      "required": true,
+      "many": false
+    },
+    "probe": {
+      "title": "Probe",
+      "target": "watchtowerProbe",
+      "required": false,
+      "many": false
+    }
+  }
+}

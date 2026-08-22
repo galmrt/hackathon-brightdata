@@ -1,0 +1,73 @@
+{
+  "identifier": "watchtowerProbeRun",
+  "title": "Probe Run",
+  "icon": "Rerun",
+  "description": "One execution of services/probe-runner: all regions probed once, region-agreement computed, and a drift-vs-incident decision made. Posted by probe-runner's PORT_WEBHOOK_URL call (see services/probe-runner/src/port.ts).",
+  "schema": {
+    "properties": {
+      "timestamp": {
+        "type": "string",
+        "format": "date-time",
+        "title": "Timestamp"
+      },
+      "targetUrl": {
+        "type": "string",
+        "format": "url",
+        "title": "Target URL"
+      },
+      "regionsPassed": {
+        "type": "number",
+        "title": "Regions Passed"
+      },
+      "regionsTotal": {
+        "type": "number",
+        "title": "Regions Total"
+      },
+      "regionAgreement": {
+        "type": "number",
+        "title": "Region Agreement",
+        "description": "regionsPassed / regionsTotal, 0..1"
+      },
+      "decision": {
+        "type": "string",
+        "title": "Decision",
+        "enum": ["healthy", "auto-heal-candidate", "escalate"],
+        "enumColors": {
+          "healthy": "green",
+          "auto-heal-candidate": "yellow",
+          "escalate": "red"
+        }
+      },
+      "confidence": {
+        "type": "number",
+        "title": "Drift Confidence",
+        "description": "0..1 confidence this is cosmetic drift rather than a real incident. Only meaningful when decision != healthy."
+      },
+      "reasons": {
+        "type": "array",
+        "title": "Reasons",
+        "items": { "type": "string" },
+        "description": "Human-readable explanation of the decision, from services/probe-runner/src/decision.ts — keep this visible in the UI, it's the whole point of the scoring function being explainable."
+      },
+      "minutesSinceDeploy": {
+        "type": "number",
+        "title": "Minutes Since Deploy"
+      },
+      "rawResults": {
+        "type": "object",
+        "title": "Raw Per-Region Results"
+      }
+    },
+    "required": ["timestamp", "targetUrl", "decision"]
+  },
+  "mirrorProperties": {},
+  "calculationProperties": {},
+  "relations": {
+    "probe": {
+      "title": "Probe",
+      "target": "watchtowerProbe",
+      "required": false,
+      "many": false
+    }
+  }
+}
