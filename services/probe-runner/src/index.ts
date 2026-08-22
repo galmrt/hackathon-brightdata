@@ -1,6 +1,7 @@
 import { loadAssertionSuite, loadRegions } from "./config.js";
 import { runRegionProbe, summarizeRun } from "./runProbe.js";
 import { decide } from "./decision.js";
+import { draftRepairDescription } from "./repair.js";
 import { loadDeployState } from "./deployState.js";
 import { postToPort } from "./port.js";
 import { shutdownTracing } from "./otel.js";
@@ -37,7 +38,15 @@ async function main() {
     console.log(`[probe-runner]   - ${reason}`);
   }
 
-  await postToPort({ ...summary, decision });
+  const repairDescription = draftRepairDescription(summary, decision);
+  if (repairDescription) {
+    console.log("[probe-runner] drafted repair description for Bright Data self-heal:");
+    for (const line of repairDescription.split("\n")) {
+      console.log(`[probe-runner]   | ${line}`);
+    }
+  }
+
+  await postToPort({ ...summary, decision, repairDescription });
   await shutdownTracing();
 
   if (decision.decision !== "healthy") {

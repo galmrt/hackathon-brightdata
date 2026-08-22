@@ -2,7 +2,12 @@ import { config } from "./config.js";
 import type { ProbeRunSummary } from "./runProbe.js";
 import type { DecisionResult } from "./decision.js";
 
-export type PortProbeRunPayload = ProbeRunSummary & { decision: DecisionResult };
+export type PortProbeRunPayload = ProbeRunSummary & {
+  decision: DecisionResult;
+  // Agent-drafted input for Bright Data's self-heal flow; null on healthy
+  // and escalate runs (see src/repair.ts).
+  repairDescription: string | null;
+};
 
 export async function postToPort(summary: PortProbeRunPayload): Promise<void> {
   if (!config.port.webhookUrl) {

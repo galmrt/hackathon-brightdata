@@ -32,6 +32,7 @@
         "decision": ".body.decision.decision",
         "confidence": ".body.decision.confidence",
         "reasons": ".body.decision.reasons",
+        "repairDescription": ".body.repairDescription // \"\"",
         "openedAt": ".body.timestamp"
       },
       "relations": {
