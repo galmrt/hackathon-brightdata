@@ -1,0 +1,39 @@
+{
+  "description": "Structural/semantic assertions for apps/demo-app, run against every region's fetched HTML. Prefer 'element exists + roughly right content' over a single brittle CSS selector, per CLAUDE.md §3 — a pure class rename should NOT fail these.",
+  "targetUrl": "DEMO_APP_URL",
+  "assertions": [
+    {
+      "id": "hero-heading-present",
+      "testId": "hero-heading",
+      "kind": "text-contains-any",
+      "expectedTextIncludesAny": ["Watchtower"],
+      "description": "Hero heading element exists and still mentions the product name."
+    },
+    {
+      "id": "product-card-present",
+      "testId": "product-card",
+      "kind": "exists",
+      "description": "Product card container exists."
+    },
+    {
+      "id": "price-format",
+      "testId": "price-value",
+      "kind": "text-matches",
+      "expectedPattern": "^\\$\\d+(\\.\\d{2})?$",
+      "description": "Price element exists and its text looks like a dollar amount."
+    },
+    {
+      "id": "buy-button-present",
+      "testId": "buy-button",
+      "kind": "text-contains-any",
+      "expectedTextIncludesAny": ["Buy"],
+      "description": "Buy button exists and its label still reads as a buy action."
+    },
+    {
+      "id": "buy-status-region-present",
+      "testId": "buy-status",
+      "kind": "exists",
+      "description": "Buy status live-region exists (text may legitimately be empty pre-interaction)."
+    }
+  ]
+}
