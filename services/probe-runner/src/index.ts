@@ -1,5 +1,7 @@
 import { loadAssertionSuite, loadRegions } from "./config.js";
 import { runRegionProbe, summarizeRun } from "./runProbe.js";
+import { decide } from "./decision.js";
+import { loadDeployState } from "./deployState.js";
 import { postToPort } from "./port.js";
 import { shutdownTracing } from "./otel.js";
 
@@ -25,10 +27,20 @@ async function main() {
     `[probe-runner] region agreement: ${summary.regionsPassed}/${summary.regionsTotal} (${(summary.regionAgreement * 100).toFixed(0)}%)`,
   );
 
-  await postToPort(summary);
+  const deployState = loadDeployState();
+  const decision = decide(summary, deployState);
+
+  console.log(
+    `[probe-runner] decision: ${decision.decision} (confidence ${(decision.confidence * 100).toFixed(0)}%)`,
+  );
+  for (const reason of decision.reasons) {
+    console.log(`[probe-runner]   - ${reason}`);
+  }
+
+  await postToPort({ ...summary, decision });
   await shutdownTracing();
 
-  if (summary.regionAgreement < 1) {
+  if (decision.decision !== "healthy") {
     process.exitCode = 1;
   }
 }

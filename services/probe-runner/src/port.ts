@@ -1,7 +1,10 @@
 import { config } from "./config.js";
 import type { ProbeRunSummary } from "./runProbe.js";
+import type { DecisionResult } from "./decision.js";
 
-export async function postToPort(summary: ProbeRunSummary): Promise<void> {
+export type PortProbeRunPayload = ProbeRunSummary & { decision: DecisionResult };
+
+export async function postToPort(summary: PortProbeRunPayload): Promise<void> {
   if (!config.port.webhookUrl) {
     console.warn(
       "[port] PORT_WEBHOOK_URL not set — skipping webhook post. Set it in .env once the Port workflow is built (CLAUDE.md Phase 3).",
