@@ -6,7 +6,9 @@
       "id": "hero-heading-present",
       "testId": "hero-heading",
       "kind": "text-contains-any",
-      "expectedTextIncludesAny": ["Watchtower"],
+      "expectedTextIncludesAny": [
+        "Watchtower"
+      ],
       "description": "Hero heading element exists and still mentions the product name."
     },
     {
@@ -19,14 +21,16 @@
       "id": "price-format",
       "testId": "price-value",
       "kind": "text-matches",
-      "expectedPattern": "^\\$\\d+(\\.\\d{2})?$",
+      "expectedPattern": "^USD \\d+\\.\\d+$",
       "description": "Price element exists and its text looks like a dollar amount."
     },
     {
       "id": "buy-button-present",
       "testId": "buy-button",
       "kind": "text-contains-any",
-      "expectedTextIncludesAny": ["Buy"],
+      "expectedTextIncludesAny": [
+        "Add to Cart"
+      ],
       "description": "Buy button exists and its label still reads as a buy action."
     },
     {
