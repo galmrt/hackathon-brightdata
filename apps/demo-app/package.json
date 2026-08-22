@@ -1,0 +1,17 @@
+{
+  "name": "watchtower-demo-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Tiny public demo app probed by Watchtower — a hero heading, a price, and a buy button.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
