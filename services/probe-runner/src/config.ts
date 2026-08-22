@@ -1,10 +1,12 @@
-import "dotenv/config";
+import { config as loadDotenv } from "dotenv";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "../../..");
+
+loadDotenv({ path: path.join(repoRoot, ".env") });
 
 export interface Region {
   id: string;
