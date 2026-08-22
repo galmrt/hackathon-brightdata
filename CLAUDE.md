@@ -30,7 +30,7 @@ The demo has two acts: (1) ship a visible cosmetic change to the demo app, watch
 .env.example                # documents required env vars (never commit the real .env)
 ```
 
-Status: `/apps/demo-app` and `.env.example` now exist (Phase 1 done — see §5). Everything else is still to be built phase by phase per the plan in §5.
+Status: `/apps/demo-app` and `.env.example` exist (Phase 1 done). `/probes` and `/services/probe-runner` are now scaffolded and typecheck clean (Phase 2 in progress — see §5): probe definitions for 3 regions, structural assertions for the demo app's 5 `data-testid` elements, a runner that fetches through Bright Data's proxy per region, runs the assertions, emits OTel spans, and posts to Port's webhook. Not yet run against live services — still needs real `BRIGHTDATA_ZONE_PASSWORD`, `SIGNOZ_ENDPOINT`/`SIGNOZ_API_KEY`, and `PORT_WEBHOOK_URL` in `.env` to verify end-to-end. `/port`, `/observability`, `/docs` still to be built per the plan in §5.
 
 ## 3. Tech stack & conventions
 
@@ -47,17 +47,21 @@ Status: `/apps/demo-app` and `.env.example` now exist (Phase 1 done — see §5)
 
 *(Fill in the real values during the workshop / after first auth — this section exists so every future session reuses the same settings instead of re-deriving them. Update this block, don't create a second one.)*
 
-- Auth: Bright Data API token, stored as `BRIGHTDATA_API_TOKEN` in `.env` (never commit it).
+- **Two separate credentials — don't conflate them** (this bit us once already, see `services/probe-runner/src/proxy.ts`):
+  - `BRIGHTDATA_API_TOKEN` — control-plane auth only (CLI / REST / Scraper Studio calls). Get it from Account settings → **Add API key** (shown once).
+  - `BRIGHTDATA_ZONE_PASSWORD` — per-zone proxy password, from that zone's **Access Details** tab. This is what actually authenticates proxy traffic; the API token does **not** work here.
+- Proxy zone: a **Datacenter** zone named `watchtower_probes` (customer ID `hl_cf3607f4`), confirmed live via the zone's own Access Details curl example. Datacenter (not residential/Web Unlocker) is the right call — we're only probing our own Vercel-hosted demo app, so there's no anti-bot/CAPTCHA to unblock, and datacenter is far cheaper and faster.
+  - Proxy endpoint: `brd.superproxy.io:44445` (confirmed from the zone's Access Details example — do not assume the commonly-documented `22225`, that port didn't match our zone).
+  - Username format: `brd-customer-<BRIGHTDATA_CUSTOMER_ID>-zone-<BRIGHTDATA_ZONE>-country-<cc>` (country suffix added by `probe-runner` per region from `probes/regions.json`).
 - CLI: `@brightdata/cli` (confirm exact package name/install command from the workshop) — run scraper commands from the terminal, not the web dashboard, per the hackathon's Bright Data judging criteria.
-- Probe zone / proxy type: TODO — set once we know which product tier the workshop provisions (residential vs datacenter, which regions are available).
 - Output format: structured JSON, one record per (region, target URL, timestamp).
 - Self-healing flow (confirmed from Bright Data docs — reflect this accurately, don't invent a fully-automatic version): a scraper's self-heal is **not** automatic detection+fix. The flow is: describe the problem in natural language (ideally pointing at what changed) → Bright Data generates a code diff (can take up to ~15 min) → review the diff → Accept/Decline → preview → explicitly click "Save to Production." Our agent step should generate that natural-language description from the SigNoz trace context, but a human still approves in Port before anything hits production. Do not build or claim a fully-unattended auto-fix — that's not how the tool works and overclaiming it will not survive a judge's follow-up question.
 
 ## 5. Build plan (phased against today's schedule)
 
-- [ ] **Workshops (10:00-11:00)**: get Bright Data API token + confirm CLI auth works; confirm SigNoz ingestion endpoint (self-hosted or cloud) and get an API key if needed; create the Port workspace and skim AI Builder's Plan/Build modes. **Not done yet** — still needed before Phase 2 can start for real.
+- [~] **Workshops (10:00-11:00)**: Bright Data API token + a live Datacenter zone (`watchtower_probes`) confirmed working — see §4. **Still needed**: confirm SigNoz ingestion endpoint (self-hosted or cloud) and get an API key; create the Port workspace and skim AI Builder's Plan/Build modes.
 - [x] **Phase 1 (11:00-12:00)**: scaffold `/apps/demo-app`, deploy it publicly (Vercel), confirm it's reachable. **Done** — live at `https://watchtower-gilt.vercel.app`, verified rendering correctly. See the Vercel gotcha note in §3.
-- [ ] **Phase 2 (12:00-13:00)**: build 1-2 Bright Data probes against the demo app from 2-3 regions; build `/services/probe-runner`; instrument with OpenTelemetry; confirm traces land in SigNoz; build one dashboard (pass/fail per region, latency).
+- [~] **Phase 2 (12:00-13:00)**: `/probes` (regions + assertions) and `/services/probe-runner` built and typecheck clean — fetches through the Bright Data proxy per region, runs structural assertions, emits one OTel span per region, posts to Port's webhook. **Still needed**: fill in real `BRIGHTDATA_ZONE_PASSWORD` + `SIGNOZ_ENDPOINT`/`SIGNOZ_API_KEY` in `.env`, run `npm run dev` in `services/probe-runner` and confirm it actually works end-to-end (proxy auth, assertions, traces landing in SigNoz), then build one SigNoz dashboard (pass/fail per region, latency).
 - [ ] **Phase 3 (13:00-14:00)**: wire a SigNoz alert to a Port workflow webhook; model `Probe` / `ProbeRun` / `Incident` blueprints in Port; build the confidence-scoring workflow step.
 - [ ] **Pizza (14:00)** — keep going after.
 - [ ] **Phase 4 (14:00-15:00)**: build both branches — auto-heal (agent drafts the repair prompt → Bright Data self-heal → human approves in Port → re-verify → close incident) and escalate (page a human, no auto-heal attempted).
