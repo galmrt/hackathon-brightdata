@@ -1,8 +1,8 @@
 {
-  "description": "Regions Watchtower probes from, routed through Bright Data's proxy network. countryCode feeds the brd-customer-<id>-zone-<zone>-country-<cc> proxy username — confirm available countries for our provisioned zone during the workshop.",
+  "description": "Logical probe regions. countryCode feeds the brd-customer-<id>-zone-<zone>-country-<cc> proxy username. The watchtower_probes zone (shared Datacenter) currently only has IPs provisioned in Netherlands — swept ~30 country codes on 2026-08-22 and only 'nl' (and the no-country default) returned 200, everything else 400s with client_10062 'No IPs in selected country'. So all three regions route through country=nl for now: the id/label stay distinct as logical identifiers (used for region-agreement scoring and demo narration), but they are NOT physically geo-diverse network paths until the zone gets more countries added. If that changes, restore real country codes here (us/gb/sg or similar) to get genuine geographic diversity.",
   "regions": [
-    { "id": "us-east", "label": "US East", "countryCode": "us" },
-    { "id": "eu-west", "label": "EU West", "countryCode": "gb" },
-    { "id": "ap-south", "label": "AP South", "countryCode": "sg" }
+    { "id": "us-east", "label": "US East", "countryCode": "nl" },
+    { "id": "eu-west", "label": "EU West", "countryCode": "nl" },
+    { "id": "ap-south", "label": "AP South", "countryCode": "nl" }
   ]
 }
