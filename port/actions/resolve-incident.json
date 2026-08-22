@@ -1,0 +1,39 @@
+{
+  "identifier": "watchtower_resolve_incident",
+  "title": "Resolve incident",
+  "icon": "DefaultBlueprint",
+  "description": "Closes the incident after re-verification: for the auto-heal branch, run the probe again post-heal and resolve once it's green; for the escalate branch, resolve once the underlying outage is fixed. Not offered on already-resolved incidents.",
+  "trigger": {
+    "type": "self-service",
+    "operation": "DAY-2",
+    "blueprintIdentifier": "watchtowerIncident",
+    "userInputs": {
+      "properties": {},
+      "required": []
+    },
+    "condition": {
+      "type": "SEARCH",
+      "combinator": "and",
+      "rules": [
+        {
+          "property": "status",
+          "operator": "!=",
+          "value": "resolved"
+        }
+      ]
+    }
+  },
+  "invocationMethod": {
+    "type": "UPSERT_ENTITY",
+    "blueprintIdentifier": "watchtowerIncident",
+    "mapping": {
+      "identifier": "{{ .entity.identifier }}",
+      "properties": {
+        "status": "resolved",
+        "resolvedAt": "{{ .trigger.at }}"
+      }
+    }
+  },
+  "requiredApproval": false,
+  "publish": true
+}

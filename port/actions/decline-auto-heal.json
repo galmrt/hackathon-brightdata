@@ -1,0 +1,45 @@
+{
+  "identifier": "watchtower_decline_auto_heal",
+  "title": "Decline auto-heal",
+  "icon": "Alert",
+  "description": "Human rejects the drafted repair — the failure is judged real (or the draft wrong), so the incident escalates instead of healing. Only offered while the incident is auto_heal_pending_approval.",
+  "trigger": {
+    "type": "self-service",
+    "operation": "DAY-2",
+    "blueprintIdentifier": "watchtowerIncident",
+    "userInputs": {
+      "properties": {
+        "declineReason": {
+          "type": "string",
+          "title": "Why are you declining?",
+          "description": "Recorded in the incident's reasons for the audit trail."
+        }
+      },
+      "required": []
+    },
+    "condition": {
+      "type": "SEARCH",
+      "combinator": "and",
+      "rules": [
+        {
+          "property": "status",
+          "operator": "=",
+          "value": "auto_heal_pending_approval"
+        }
+      ]
+    }
+  },
+  "invocationMethod": {
+    "type": "UPSERT_ENTITY",
+    "blueprintIdentifier": "watchtowerIncident",
+    "mapping": {
+      "identifier": "{{ .entity.identifier }}",
+      "properties": {
+        "status": "auto_heal_declined",
+        "approvedBy": "{{ .trigger.by.user.email }}"
+      }
+    }
+  },
+  "requiredApproval": false,
+  "publish": true
+}
