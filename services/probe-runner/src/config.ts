@@ -67,6 +67,12 @@ export const config = {
     get apiToken() {
       return requireEnv("BRIGHTDATA_API_TOKEN");
     },
+    // Per-zone proxy password from the zone's Access Details tab — distinct
+    // from BRIGHTDATA_API_TOKEN, which only authenticates control-plane
+    // (CLI/REST) calls, not proxy traffic. See docs.brightdata.com/general/account/api-token.
+    get zonePassword() {
+      return requireEnv("BRIGHTDATA_ZONE_PASSWORD");
+    },
     proxyHost: process.env.BRIGHTDATA_PROXY_HOST || "brd.superproxy.io",
     proxyPort: process.env.BRIGHTDATA_PROXY_PORT || "22225",
   },
