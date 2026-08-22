@@ -1,0 +1,53 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Env / secrets — never commit real credentials
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Build outputs
+.next/
+dist/
+build/
+out/
+*.tsbuildinfo
+
+# Python (in case any helper/glue scripts are Python)
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Logs
+*.log
+npm-debug.log*
+logs/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Bright Data / Scraper Studio local cache
+.brightdata/
+scraper-studio-cache/
+
+# SigNoz / OpenTelemetry local data
+otel-collector-data/
+
+# Port local state
+.port/
+
+# Misc
+coverage/
+.turbo/
+
+# Scratch folder used while cleaning up a stale git lock file the
+# device bridge couldn't delete directly — safe to delete by hand.
+_to_delete/
