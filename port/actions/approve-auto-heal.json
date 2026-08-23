@@ -2,7 +2,7 @@
   "identifier": "watchtower_approve_auto_heal",
   "title": "Approve auto-heal",
   "icon": "Check",
-  "description": "Human approval gate for the drift branch (CLAUDE.md §1/§4): confirms the agent-drafted repair description should be submitted to Bright Data's self-heal flow. Only offered while the incident is auto_heal_pending_approval.",
+  "description": "Human approval gate for the stale-assertion (false-positive) branch (CLAUDE.md §1/§4): confirms the agent-drafted repair description should be submitted to Bright Data's self-heal flow. Only offered while the incident is auto_heal_pending_approval.",
   "trigger": {
     "type": "self-service",
     "operation": "DAY-2",

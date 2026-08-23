@@ -13,7 +13,7 @@ import { FAULT_ENV_VAR, faultTargetRegionId } from "./fault.js";
 // on the incident in Port (Port only has our ingest webhook, not the other way
 // around, so the trigger is a CLI invocation; that also keeps the human in the
 // loop). Our probes are our own assertion engine, so the artifact that actually
-// breaks on cosmetic drift is probes/demo-app.assertions.json — this heals
+// goes stale after a frontend change is probes/demo-app.assertions.json — this heals
 // *that*: re-derives each failing expectation from the page's current reality,
 // shows an old→new diff (mirroring Bright Data's review-the-diff beat), writes
 // the file, and re-verifies green.
@@ -68,7 +68,7 @@ function abort(message: string): never {
 // Strings that are render/serialization bugs, not copy. A global JS failure
 // (e.g. a component rendering "[object Object]") fails unanimously across all
 // regions AND correlates with the buggy deploy itself, so it sails through
-// every drift signal in decision.ts — the derivation step is the last
+// every false-positive signal in decision.ts — the derivation step is the last
 // automated gate before a human sees the diff. Adopting one of these would
 // codify the bug into the monitor, so derivation hard-aborts instead.
 const ERROR_ARTIFACT_PATTERNS: RegExp[] = [
@@ -114,7 +114,7 @@ function deriveFix(assertion: AssertionDef, html: string): HealedChange {
   if (el.length === 0) {
     abort(
       `[data-testid="${assertion.testId}"] is missing from the page entirely. ` +
-        "A vanished element is structural breakage, not re-derivable drift — a human needs to look at this.",
+        "A vanished element is structural breakage, not a stale assertion — a human needs to look at this.",
     );
   }
   const currentText = el.first().text().trim();
@@ -197,7 +197,7 @@ async function main() {
   if (failing.length !== checks.length) {
     abort(
       `only ${failing.length}/${checks.length} region(s) are failing right now. ` +
-        "Partial cross-region disagreement looks like a real incident, not cosmetic drift — escalate to a human instead.",
+        "Partial cross-region disagreement looks like a real incident, not stale assertions — escalate to a human instead.",
     );
   }
 
@@ -207,7 +207,7 @@ async function main() {
     const ids = failedIds(check);
     if (ids.join(",") !== referenceIds.join(",")) {
       abort(
-        `regions disagree on WHICH assertions fail (${checks[0].region.id}: [${referenceIds}] vs ${check.region.id}: [${ids}]) — not a uniform cosmetic change, refusing to heal.`,
+        `regions disagree on WHICH assertions fail (${checks[0].region.id}: [${referenceIds}] vs ${check.region.id}: [${ids}]) — not a uniform frontend change, refusing to heal.`,
       );
     }
   }

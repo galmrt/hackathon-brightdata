@@ -4,7 +4,7 @@
 
 Synthetic monitoring that probes a demo app from multiple regions through **Bright Data's proxy network** — and can tell apart two failures that look identical to a naive health check:
 
-| | Cosmetic drift | Real incident |
+| | Stale assertions (false positive) | Real incident |
 |---|---|---|
 | **Signal** | All regions fail the **same** assertions, right after a deploy | Regions **disagree**, or no recent deploy |
 | **Response** | Draft a repair → human approves in **Port** → self-heal assertions → re-verify | Escalate immediately. **Refuse** to auto-heal |
@@ -13,7 +13,7 @@ That disambiguation is the deliverable: a monitor that silently "heals" itself t
 
 ## How it decides
 
-Simple, explainable scoring (`services/probe-runner/src/decision.ts`): cross-region agreement on the same failures → 0.6 confidence it's drift; a frontend deploy inside the correlation window (recorded by `npm run deploy`) → 0.95. Only ≥ 0.9 becomes an `auto-heal-candidate`; any partial region disagreement hard-escalates regardless.
+Simple, explainable scoring (`services/probe-runner/src/decision.ts`): cross-region agreement on the same failures → 0.6 confidence it's a false positive; a frontend deploy inside the correlation window (recorded by `npm run deploy`) → 0.95. Only ≥ 0.9 becomes an `auto-heal-candidate`; any partial region disagreement hard-escalates regardless.
 
 Even then, nothing auto-executes. A human clicks **Approve auto-heal** in Port, then `npm run heal`:
 re-verifies failures are **unanimous** across all regions → re-derives each expectation from the live page → aborts on structural breakage or render-bug artifacts (`[object Object]`, unrendered templates…) → shows an old→new diff → heals `probes/demo-app.assertions.json` → re-verifies green.
@@ -54,7 +54,7 @@ npm run heal                    # only after Approve auto-heal in Port
 
 ## The two-act demo
 
-1. **Drift**: ship a cosmetic change (`npm run deploy`) → all regions fail together → `auto-heal-candidate` 95% → Approve in Port → heal → green → Resolve. ✅ self-healed
+1. **Stale assertions**: ship a frontend redesign (`npm run deploy`) → all regions fail together → `auto-heal-candidate` 95% → Approve in Port → heal → green → Resolve. ✅ self-healed
 2. **Incident**: `WATCHTOWER_BREAK_REGION=ap-south npm run dev` breaks one region's fetched HTML → 1/3 fails → `escalate` 0%, no repair drafted, heal refuses to run. 🚨 paged instead
 
 Both acts rehearsed end to end against live services. The fault lever is an honest demo device — the proxy zone is currently single-country (`nl` only), so a real per-region failure can't be produced naturally; the lever exercises the same decision path and is loudly labeled on the span.

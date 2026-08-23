@@ -2,7 +2,7 @@
   "identifier": "watchtowerProbeRun",
   "title": "Probe Run",
   "icon": "Rerun",
-  "description": "One execution of services/probe-runner: all regions probed once, region-agreement computed, and a drift-vs-incident decision made. Posted by probe-runner's PORT_WEBHOOK_URL call (see services/probe-runner/src/port.ts).",
+  "description": "One execution of services/probe-runner: all regions probed once, region-agreement computed, and a false-positive-vs-incident decision made. Posted by probe-runner's PORT_WEBHOOK_URL call (see services/probe-runner/src/port.ts).",
   "schema": {
     "properties": {
       "timestamp": {
@@ -40,8 +40,8 @@
       },
       "confidence": {
         "type": "number",
-        "title": "Drift Confidence",
-        "description": "0..1 confidence this is cosmetic drift rather than a real incident. Only meaningful when decision != healthy."
+        "title": "False-Positive Confidence",
+        "description": "0..1 confidence this failure is a false positive (stale assertions after a frontend change) rather than a real incident. Only meaningful when decision != healthy."
       },
       "reasons": {
         "type": "array",

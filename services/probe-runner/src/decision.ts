@@ -5,8 +5,9 @@ export type Decision = "healthy" | "auto-heal-candidate" | "escalate";
 
 export interface DecisionResult {
   decision: Decision;
-  // Confidence (0..1) that a failure is cosmetic drift rather than a real
-  // incident. Only meaningful when decision !== "healthy".
+  // Confidence (0..1) that a failure is a false positive (stale assertions
+  // after a frontend change) rather than a real incident. Only meaningful
+  // when decision !== "healthy".
   confidence: number;
   reasons: string[];
   signals: {
@@ -51,7 +52,7 @@ export function decide(
   if (!allRegionsFailedTogether) {
     reasons.push(
       `only ${summary.regionsTotal - summary.regionsPassed}/${summary.regionsTotal} region(s) failed — ` +
-        "cross-region disagreement rules out a global cosmetic change, this looks like a real regional incident",
+        "cross-region disagreement rules out stale assertions, this looks like a real regional incident",
     );
     return {
       decision: "escalate",

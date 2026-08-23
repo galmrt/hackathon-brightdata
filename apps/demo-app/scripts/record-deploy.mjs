@@ -2,7 +2,7 @@
 // Writes deploy-state.json at the repo root with the current timestamp.
 // Run this right after `vercel --prod` so probe-runner's deploy-recency
 // signal (see services/probe-runner/src/decision.ts) reflects reality —
-// it's the "recent frontend deploy" half of the drift-vs-incident scoring
+// it's the "recent frontend deploy" half of the false-positive-vs-incident scoring
 // described in CLAUDE.md §1.
 import { writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";

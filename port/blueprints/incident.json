@@ -34,7 +34,7 @@
       },
       "confidence": {
         "type": "number",
-        "title": "Drift Confidence"
+        "title": "False-Positive Confidence"
       },
       "reasons": {
         "type": "array",
