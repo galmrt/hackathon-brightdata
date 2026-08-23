@@ -9,7 +9,7 @@ Synthetic monitoring that probes a demo app from multiple regions through **Brig
 | **Signal** | All regions fail the **same** assertions, right after a deploy | Regions **disagree**, or no recent deploy |
 | **Response** | Draft a repair → human approves in **Port** → self-heal assertions → re-verify | Escalate immediately. **Refuse** to auto-heal |
 
-That disambiguation is the deliverable: a monitor that silently "heals" itself to match broken content is worse than no monitoring at all.
+**The problem**: when a production check fails, something must decide whether the *monitor* went stale or the *app* broke — the two cases are identical to the check itself, and today that triage is a human's job. Guess wrong one way and false alarms erode trust in the pager; guess wrong the other way and you "fix" the check to match a broken page — a monitor that certifies outages as healthy is worse than no monitoring at all. Watchtower automates the triage and gates self-repair on it. That decision is the deliverable, not the healing.
 
 ## How it decides
 
@@ -17,6 +17,14 @@ Simple, explainable scoring (`services/probe-runner/src/decision.ts`): cross-reg
 
 Even then, nothing auto-executes. A human clicks **Approve auto-heal** in Port, then `npm run heal`:
 re-verifies failures are **unanimous** across all regions → re-derives each expectation from the live page → aborts on structural breakage or render-bug artifacts (`[object Object]`, unrendered templates…) → shows an old→new diff → heals `probes/demo-app.assertions.json` → re-verifies green.
+
+## What's automated — and what deliberately isn't
+
+**Automated**: multi-region fetch through Bright Data's proxy; structural assertions; OTel spans; Port ingestion; the triage decision itself (agreement + deploy-recency scoring, with human-readable reasons); incident creation; drafting the repair description; and the repair once triggered — re-fetch all regions, unanimity gates, re-derive expectations from the live page, diff, write, re-verify. No human ever edits an expectation by hand.
+
+**Human by design**: clicking **Approve auto-heal** in Port (the system proposes, never applies unapproved); triggering `npm run heal` after approval (Port holds no credentials to call the runner — in production this is one webhook from the Port action to a heal service); clicking **Resolve incident**; committing the healed file (git is the audit trail); responding to escalations.
+
+**Not claimed**: probe runs are triggered on demand in the demo, not cron-scheduled (the runner is schedule-ready). Heal fixes the monitor's expectations (`probes/demo-app.assertions.json`), never application code — a real incident always gets a human. Bright Data's own self-heal is likewise human-gated (describe → generated diff → review → save); we mirror that shape, not exceed it.
 
 ## Flow
 
