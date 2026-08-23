@@ -16,6 +16,9 @@ export interface RegionProbeResult {
   fetchError: string | null;
   assertions: AssertionResult[];
   allAssertionsPassed: boolean;
+  // True when the Act 2 demo lever corrupted this region's HTML — surfaced in
+  // the dashboard so the fault is visibly labeled, mirroring the span attribute.
+  faultInjected: boolean;
 }
 
 export interface ProbeRunSummary {
@@ -41,6 +44,7 @@ export async function runRegionProbe(
     let httpStatus: number | null = null;
     let fetchError: string | null = null;
     let assertions: AssertionResult[] = [];
+    let faultInjected = false;
 
     try {
       const dispatcher = proxyAgentForRegion(region);
@@ -49,6 +53,7 @@ export async function runRegionProbe(
       let html = await response.body.text();
       if (shouldInjectFault(region)) {
         html = injectFault(region, html);
+        faultInjected = true;
         span.setAttribute("watchtower.fault_injected", true);
       }
       assertions = runAssertions(html, suite.assertions);
@@ -90,6 +95,7 @@ export async function runRegionProbe(
       fetchError,
       assertions,
       allAssertionsPassed,
+      faultInjected,
     };
   });
 }

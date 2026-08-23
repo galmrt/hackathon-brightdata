@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Watchtower Control Room</title>
+<style>
+  /* Deliberately a single committed dark look — this is the on-camera demo
+     surface. Palette values follow the validated dark-mode reference set. */
+  :root {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --surface-2: #232322;
+    --ink: #ffffff;
+    --ink-2: #c3c2b7;
+    --muted: #898781;
+    --hairline: rgba(255, 255, 255, 0.10);
+    --grid: #2c2c2a;
+    --good: #0ca30c;
+    --warning: #fab219;
+    --critical: #d03b3b;
+    --info: #3987e5;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--ink);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  main { max-width: 1180px; margin: 0 auto; padding: 24px 28px 64px; }
+
+  header { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+  header h1 { font-size: 20px; margin: 0; letter-spacing: 0.2px; }
+  header h1 span { color: var(--muted); font-weight: 400; }
+  .live { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-2); font-size: 13px; }
+  .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--good); }
+  .live-dot.stale { background: var(--muted); }
+  header nav { margin-left: auto; display: flex; gap: 8px; }
+  .btn {
+    display: inline-block; padding: 6px 12px; border-radius: 6px;
+    border: 1px solid var(--hairline); background: var(--surface);
+    color: var(--ink); text-decoration: none; font-size: 13px;
+  }
+  .btn:hover { background: var(--surface-2); }
+  .btn.primary { border-color: var(--info); }
+
+  .empty {
+    border: 1px dashed var(--grid); border-radius: 10px; padding: 48px 24px;
+    text-align: center; color: var(--ink-2);
+  }
+  .empty code { color: var(--ink); background: var(--surface); padding: 2px 6px; border-radius: 4px; }
+
+  section { margin-bottom: 20px; }
+  .card { background: var(--surface); border: 1px solid var(--hairline); border-radius: 10px; padding: 16px 18px; }
+
+  /* Decision hero */
+  .decision { display: flex; align-items: flex-start; gap: 14px; }
+  .decision-icon { font-size: 26px; line-height: 1.2; }
+  .decision-label { font-size: 21px; font-weight: 650; letter-spacing: 0.3px; }
+  .decision-meta { color: var(--ink-2); font-size: 13px; margin-top: 2px; }
+  .decision.healthy .decision-label { color: var(--good); }
+  .decision.candidate .decision-label { color: var(--warning); }
+  .decision.escalate .decision-label { color: var(--critical); }
+  .reasons { margin: 12px 0 0; padding: 0; list-style: none; }
+  .reasons li {
+    padding: 7px 0 7px 14px; border-left: 2px solid var(--grid);
+    color: var(--ink-2); font-size: 14px;
+  }
+  .reasons li + li { margin-top: 4px; }
+
+  /* Signal tiles */
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+  .tile { background: var(--surface); border: 1px solid var(--hairline); border-radius: 10px; padding: 12px 16px; }
+  .tile .k { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.6px; }
+  .tile .v { font-size: 24px; font-weight: 600; margin-top: 2px; }
+  .tile .s { color: var(--ink-2); font-size: 12.5px; margin-top: 2px; }
+
+  /* Region cards */
+  .regions { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+  .region-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .region-head strong { font-size: 15px; }
+  .region-head .cc { color: var(--muted); font-size: 12px; }
+  .chip {
+    margin-left: auto; font-size: 12px; font-weight: 650; letter-spacing: 0.5px;
+    padding: 2px 9px; border-radius: 999px; border: 1px solid;
+  }
+  .chip.pass { color: var(--good); border-color: var(--good); }
+  .chip.fail { color: var(--critical); border-color: var(--critical); }
+  .chip.warn { color: var(--warning); border-color: var(--warning); }
+  .region-meta { color: var(--muted); font-size: 12.5px; margin-bottom: 8px; font-variant-numeric: tabular-nums; }
+  .fault-badge { color: var(--warning); font-size: 12px; margin-left: 8px; }
+  .assertion { display: flex; gap: 8px; padding: 5px 0; border-top: 1px solid var(--grid); font-size: 13.5px; }
+  .assertion .mark { flex: none; width: 16px; text-align: center; }
+  .assertion.ok .mark { color: var(--good); }
+  .assertion.bad .mark { color: var(--critical); }
+  .assertion .aid { color: var(--ink-2); }
+  .assertion.bad .aid { color: var(--ink); }
+  .assertion .why { color: var(--muted); font-size: 12.5px; }
+  .assertion.bad .why { color: var(--critical); }
+
+  /* Repair / escalation panel */
+  .panel-title { display: flex; align-items: center; gap: 10px; font-weight: 650; margin-bottom: 8px; }
+  .repair pre {
+    background: var(--page); border: 1px solid var(--grid); border-radius: 8px;
+    padding: 12px 14px; white-space: pre-wrap; font-size: 13px; color: var(--ink-2);
+    margin: 0 0 12px;
+  }
+  .panel-note { color: var(--ink-2); font-size: 13.5px; margin-bottom: 12px; }
+  .escalate-panel { border-color: var(--critical); }
+  .escalate-panel .panel-title { color: var(--critical); }
+
+  /* History */
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); margin: 0 0 10px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th { text-align: left; color: var(--muted); font-weight: 500; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; padding: 6px 10px; }
+  td { padding: 7px 10px; border-top: 1px solid var(--grid); font-variant-numeric: tabular-nums; }
+  tbody tr { cursor: pointer; }
+  tbody tr:hover { background: var(--surface-2); }
+  tbody tr.selected { background: var(--surface-2); box-shadow: inset 2px 0 0 var(--info); }
+  .d-healthy { color: var(--good); }
+  .d-candidate { color: var(--warning); }
+  .d-escalate { color: var(--critical); }
+  .viewing-note { color: var(--warning); font-size: 13px; margin-bottom: 12px; display: none; }
+  .viewing-note button { margin-left: 8px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Watchtower <span>/ control room</span></h1>
+    <span class="live"><span class="live-dot" id="liveDot"></span><span id="liveText">connecting…</span></span>
+    <nav>
+      <a class="btn" id="appLink" href="#" target="_blank" rel="noopener">Demo app ↗</a>
+      <a class="btn" href="https://app.getport.io" target="_blank" rel="noopener">Port catalog ↗</a>
+    </nav>
+  </header>
+
+  <div class="empty" id="empty">
+    Waiting for the first probe run — run <code>npm run dev</code> in <code>services/probe-runner</code>.
+  </div>
+
+  <div id="content" hidden>
+    <p class="viewing-note" id="viewingNote">
+      ⏸ Viewing a past run — <button class="btn" id="backToLive">back to latest</button>
+    </p>
+
+    <section class="card">
+      <div class="decision" id="decision">
+        <div class="decision-icon" id="decisionIcon"></div>
+        <div>
+          <div class="decision-label" id="decisionLabel"></div>
+          <div class="decision-meta" id="decisionMeta"></div>
+        </div>
+      </div>
+      <ul class="reasons" id="reasons"></ul>
+    </section>
+
+    <section class="tiles" id="tiles"></section>
+
+    <section class="regions" id="regions"></section>
+
+    <section class="card repair" id="repairPanel" hidden>
+      <div class="panel-title">⚠ <span>Drafted repair — awaiting human approval</span></div>
+      <pre id="repairText"></pre>
+      <p class="panel-note">
+        Nothing executes until a human clicks <strong>Approve auto-heal</strong> on the incident
+        in Port; the heal then runs from the CLI (<code>npm run heal</code>) and re-verifies
+        every region before closing the loop.
+      </p>
+      <a class="btn primary" id="incidentLink" href="#" target="_blank" rel="noopener">Open incident in Port ↗</a>
+    </section>
+
+    <section class="card escalate-panel" id="escalatePanel" hidden>
+      <div class="panel-title">⛔ <span>Auto-heal refused — escalated to a human</span></div>
+      <p class="panel-note">
+        Regions disagree, so this does not look like a global cosmetic change. No repair was
+        drafted: silently healing assertions to match broken content would hide a real incident.
+      </p>
+      <a class="btn primary" id="escalateLink" href="#" target="_blank" rel="noopener">Open incident in Port ↗</a>
+    </section>
+
+    <section>
+      <h2>Run history</h2>
+      <div class="card" style="padding: 4px 0;">
+        <table>
+          <thead>
+            <tr><th>Time</th><th>Decision</th><th>Regions</th><th>Confidence</th><th>Deploy</th></tr>
+          </thead>
+          <tbody id="historyBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script>
+  const PORT_INCIDENT_URL = (runId) =>
+    `https://app.getport.io/watchtowerIncidentEntity?identifier=incident-${runId}`;
+
+  const DECISIONS = {
+    "healthy":             { cls: "healthy",   icon: "✓", label: "HEALTHY",             chip: "d-healthy" },
+    "auto-heal-candidate": { cls: "candidate", icon: "⚠", label: "AUTO-HEAL CANDIDATE", chip: "d-candidate" },
+    "escalate":            { cls: "escalate",  icon: "⛔", label: "ESCALATED — HUMAN REQUIRED", chip: "d-escalate" },
+  };
+
+  let runs = [];
+  let selectedRunId = null; // null = follow latest
+  let lastFetchOk = false;
+
+  const $ = (id) => document.getElementById(id);
+
+  function relTime(iso) {
+    const s = (Date.now() - Date.parse(iso)) / 1000;
+    if (s < 60) return `${Math.max(0, Math.round(s))}s ago`;
+    if (s < 3600) return `${Math.round(s / 60)} min ago`;
+    return `${(s / 3600).toFixed(1)} h ago`;
+  }
+  const clock = (iso) => new Date(iso).toLocaleTimeString();
+
+  function render() {
+    $("empty").hidden = runs.length > 0;
+    $("content").hidden = runs.length === 0;
+    $("liveDot").classList.toggle("stale", !lastFetchOk);
+    if (runs.length === 0) {
+      $("liveText").textContent = lastFetchOk ? "no runs yet" : "feed unreachable";
+      return;
+    }
+
+    const latest = runs[0];
+    const run = runs.find((r) => r.runId === selectedRunId) ?? latest;
+    const isLatest = run.runId === latest.runId;
+    $("viewingNote").style.display = isLatest ? "none" : "block";
+    $("liveText").textContent = `last run ${relTime(latest.timestamp)}`;
+    $("appLink").href = run.targetUrl;
+
+    // Decision hero
+    const d = DECISIONS[run.decision.decision] ?? DECISIONS["escalate"];
+    $("decision").className = `decision ${d.cls}`;
+    $("decisionIcon").textContent = d.icon;
+    $("decisionLabel").textContent = d.label;
+    $("decisionMeta").textContent =
+      `confidence ${(run.decision.confidence * 100).toFixed(0)}% · run ${run.runId.slice(0, 8)} · ${clock(run.timestamp)} (${relTime(run.timestamp)})`;
+    const reasons = $("reasons");
+    reasons.replaceChildren(...run.decision.reasons.map((r) => {
+      const li = document.createElement("li");
+      li.textContent = r;
+      return li;
+    }));
+
+    // Signal tiles
+    const sig = run.decision.signals;
+    const assertionsPassed = run.results.reduce((n, r) => n + r.assertions.filter((a) => a.passed).length, 0);
+    const assertionsTotal = run.results.reduce((n, r) => n + r.assertions.length, 0);
+    const avgLatency = Math.round(run.results.reduce((n, r) => n + r.latencyMs, 0) / run.results.length);
+    const tiles = [
+      { k: "Region agreement", v: `${run.regionsPassed}/${run.regionsTotal}`,
+        s: sig.allRegionsFailedTogether ? "all regions failed together" : run.regionsPassed === run.regionsTotal ? "all regions passing" : "regions disagree" },
+      { k: "Last deploy", v: sig.minutesSinceDeploy === null ? "—" : `${sig.minutesSinceDeploy.toFixed(1)} min`,
+        s: sig.minutesSinceDeploy === null ? "none on record" : sig.recentDeploy ? "inside correlation window" : "outside correlation window" },
+      { k: "Assertions", v: `${assertionsPassed}/${assertionsTotal}`, s: "across all regions" },
+      { k: "Avg probe latency", v: `${avgLatency} ms`, s: "via Bright Data proxy" },
+    ];
+    $("tiles").replaceChildren(...tiles.map((t) => {
+      const div = document.createElement("div");
+      div.className = "tile";
+      for (const [cls, text] of [["k", t.k], ["v", t.v], ["s", t.s]]) {
+        const el = document.createElement("div");
+        el.className = cls;
+        el.textContent = text;
+        div.appendChild(el);
+      }
+      return div;
+    }));
+
+    // Region cards
+    $("regions").replaceChildren(...run.results.map((r) => {
+      const card = document.createElement("div");
+      card.className = "card";
+
+      const head = document.createElement("div");
+      head.className = "region-head";
+      const name = document.createElement("strong");
+      name.textContent = r.region.label ?? r.region.id;
+      const cc = document.createElement("span");
+      cc.className = "cc";
+      cc.textContent = r.region.id;
+      head.append(name, cc);
+      if (run.results.some((x) => x.faultInjected) && r.faultInjected) {
+        const fb = document.createElement("span");
+        fb.className = "fault-badge";
+        fb.textContent = "⚡ fault injected";
+        head.appendChild(fb);
+      }
+      const chip = document.createElement("span");
+      chip.className = `chip ${r.allAssertionsPassed ? "pass" : "fail"}`;
+      chip.textContent = r.allAssertionsPassed ? "✓ PASS" : "✕ FAIL";
+      head.appendChild(chip);
+      card.appendChild(head);
+
+      const meta = document.createElement("div");
+      meta.className = "region-meta";
+      meta.textContent = r.fetchError
+        ? `fetch failed: ${r.fetchError}`
+        : `HTTP ${r.httpStatus} · ${r.latencyMs} ms`;
+      card.appendChild(meta);
+
+      for (const a of r.assertions) {
+        const row = document.createElement("div");
+        row.className = `assertion ${a.passed ? "ok" : "bad"}`;
+        const mark = document.createElement("span");
+        mark.className = "mark";
+        mark.textContent = a.passed ? "✓" : "✕";
+        const body = document.createElement("div");
+        const aid = document.createElement("div");
+        aid.className = "aid";
+        aid.textContent = a.id;
+        body.appendChild(aid);
+        if (!a.passed && a.reason) {
+          const why = document.createElement("div");
+          why.className = "why";
+          why.textContent = a.reason;
+          body.appendChild(why);
+        }
+        row.append(mark, body);
+        card.appendChild(row);
+      }
+      return card;
+    }));
+
+    // Repair / escalation panels
+    const isCandidate = run.decision.decision === "auto-heal-candidate";
+    const isEscalate = run.decision.decision === "escalate";
+    $("repairPanel").hidden = !(isCandidate && run.repairDescription);
+    if (isCandidate && run.repairDescription) {
+      $("repairText").textContent = run.repairDescription;
+      $("incidentLink").href = PORT_INCIDENT_URL(run.runId);
+    }
+    $("escalatePanel").hidden = !isEscalate;
+    if (isEscalate) $("escalateLink").href = PORT_INCIDENT_URL(run.runId);
+
+    // History
+    $("historyBody").replaceChildren(...runs.map((r) => {
+      const tr = document.createElement("tr");
+      if (r.runId === run.runId) tr.classList.add("selected");
+      const d2 = DECISIONS[r.decision.decision] ?? DECISIONS["escalate"];
+      const cells = [
+        `${clock(r.timestamp)} (${relTime(r.timestamp)})`,
+        `${d2.icon} ${r.decision.decision}`,
+        `${r.regionsPassed}/${r.regionsTotal}`,
+        `${(r.decision.confidence * 100).toFixed(0)}%`,
+        r.decision.signals.minutesSinceDeploy === null ? "—" : `${r.decision.signals.minutesSinceDeploy.toFixed(0)} min ago`,
+      ];
+      cells.forEach((text, i) => {
+        const td = document.createElement("td");
+        td.textContent = text;
+        if (i === 1) td.className = d2.chip;
+        tr.appendChild(td);
+      });
+      tr.addEventListener("click", () => {
+        selectedRunId = r.runId === runs[0].runId ? null : r.runId;
+        render();
+      });
+      return tr;
+    }));
+  }
+
+  $("backToLive").addEventListener("click", () => {
+    selectedRunId = null;
+    render();
+  });
+
+  async function poll() {
+    try {
+      const res = await fetch("data/runs.json", { cache: "no-store" });
+      const data = res.ok ? await res.json() : null;
+      runs = Array.isArray(data) ? data : [];
+      lastFetchOk = true;
+    } catch {
+      lastFetchOk = false;
+    }
+    render();
+  }
+
+  poll();
+  setInterval(poll, 3000);
+</script>
+</body>
+</html>

@@ -10,6 +10,7 @@
     "start": "node dist/index.js",
     "dev": "tsx src/index.ts",
     "heal": "tsx src/heal.ts",
+    "ui": "node ../../apps/dashboard/server.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {

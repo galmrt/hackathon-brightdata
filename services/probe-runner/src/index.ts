@@ -5,6 +5,7 @@ import { draftRepairDescription } from "./repair.js";
 import { loadDeployState } from "./deployState.js";
 import { FAULT_ENV_VAR, faultTargetRegionId } from "./fault.js";
 import { postToPort } from "./port.js";
+import { writeDashboardFeed } from "./dashboardFeed.js";
 import { shutdownTracing } from "./otel.js";
 
 async function main() {
@@ -56,7 +57,11 @@ async function main() {
     }
   }
 
-  await postToPort({ ...summary, decision, repairDescription });
+  const payload = { ...summary, decision, repairDescription };
+  // Feed the local dashboard before the Port post so the control room still
+  // updates even if the webhook call fails.
+  writeDashboardFeed(payload);
+  await postToPort(payload);
   await shutdownTracing();
 
   if (decision.decision !== "healthy") {

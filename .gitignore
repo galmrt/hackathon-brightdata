@@ -48,6 +48,9 @@ otel-collector-data/
 coverage/
 .turbo/
 
+# Watchtower control-room dashboard feed (written per probe run, local-only)
+apps/dashboard/data/
+
 # Scratch folder used while cleaning up a stale git lock file the
 # device bridge couldn't delete directly — safe to delete by hand.
 _to_delete/
