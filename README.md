@@ -60,12 +60,14 @@ npm run ui                      # control room at http://localhost:4173
 npm run heal                    # only after Approve auto-heal in Port
 ```
 
-## The two-act demo
+## The two scenarios
+
+**[Screenshot walkthrough →](docs/walkthrough.md)**
 
 1. **Stale assertions**: ship a frontend redesign (`npm run deploy`) → all regions fail together → `auto-heal-candidate` 95% → Approve in Port → heal → green → Resolve. ✅ self-healed
 2. **Incident**: `WATCHTOWER_BREAK_REGION=ap-south npm run dev` breaks one region's fetched HTML → 1/3 fails → `escalate` 0%, no repair drafted, heal refuses to run. 🚨 paged instead
 
-Both acts rehearsed end to end against live services. The fault lever is an honest demo device — the proxy zone is currently single-country (`nl` only), so a real per-region failure can't be produced naturally; the lever exercises the same decision path and is loudly labeled on the span.
+Both scenarios rehearsed end to end against live services. The fault lever is an honest demo device — the proxy zone is currently single-country (`nl` only), so a real per-region failure can't be produced naturally; the lever exercises the same decision path and is loudly labeled on the span.
 
 ## Sponsor tech, honestly
 
