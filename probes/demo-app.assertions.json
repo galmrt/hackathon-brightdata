@@ -21,7 +21,7 @@
       "id": "price-format",
       "testId": "price-value",
       "kind": "text-matches",
-      "expectedPattern": "^USD \\d+\\.\\d+$",
+      "expectedPattern": "^\\$\\d+$",
       "description": "Price element exists and its text looks like a dollar amount."
     },
     {
@@ -29,7 +29,7 @@
       "testId": "buy-button",
       "kind": "text-contains-any",
       "expectedTextIncludesAny": [
-        "Add to Cart"
+        "Buy Now"
       ],
       "description": "Buy button exists and its label still reads as a buy action."
     },
