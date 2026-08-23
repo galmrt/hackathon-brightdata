@@ -65,6 +65,30 @@ function abort(message: string): never {
   process.exit(1);
 }
 
+// Strings that are render/serialization bugs, not copy. A global JS failure
+// (e.g. a component rendering "[object Object]") fails unanimously across all
+// regions AND correlates with the buggy deploy itself, so it sails through
+// every drift signal in decision.ts — the derivation step is the last
+// automated gate before a human sees the diff. Adopting one of these would
+// codify the bug into the monitor, so derivation hard-aborts instead.
+const ERROR_ARTIFACT_PATTERNS: RegExp[] = [
+  /\[object [A-Za-z]+\]/, // default Object toString: "[object Object]"
+  /\bundefined\b/i,
+  /\bnull\b/i,
+  /\bNaN\b/, // exact case — distinctive, avoids names like "Nan"
+  /^[A-Za-z.]*(Error|Exception)\b/, // "TypeError: x is not a function"
+  /\{\{[^}]+\}\}/, // unrendered {{mustache}} placeholder
+  /\$\{[^}]+\}/, // unrendered ${template} literal
+];
+
+function errorArtifactIn(text: string): string | null {
+  for (const pattern of ERROR_ARTIFACT_PATTERNS) {
+    const match = text.match(pattern);
+    if (match) return match[0];
+  }
+  return null;
+}
+
 // Generalize the element's current literal text into an anchored pattern:
 // escape regex metacharacters, then let any digit run vary. "$24.99" becomes
 // ^\$\d+\.\d+$ — same shape the page renders now, tolerant of future price
@@ -94,6 +118,15 @@ function deriveFix(assertion: AssertionDef, html: string): HealedChange {
     );
   }
   const currentText = el.first().text().trim();
+
+  const artifact = errorArtifactIn(currentText);
+  if (artifact) {
+    abort(
+      `[data-testid="${assertion.testId}"] currently renders "${currentText}" — "${artifact}" ` +
+        "looks like a render/serialization bug shipped to production, not intentional copy. " +
+        "Refusing to adopt it as the new expectation; this needs a human, not a heal.",
+    );
+  }
 
   switch (assertion.kind) {
     case "text-contains-any": {
