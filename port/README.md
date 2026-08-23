@@ -7,7 +7,7 @@ This directory is the version-controlled export point for Port config, per the r
 - `blueprints/probe.json` — one entity per configured target (`probes/demo-app.assertions.json`). Not yet created in Port (optional — nothing currently relates to it).
 - `blueprints/probe-run.json` — one entity per `services/probe-runner` execution. Matches the `PortProbeRunPayload` shape posted by `src/port.ts` (`ProbeRunSummary & { decision: DecisionResult }` from `src/decision.ts`). **Created in Port.**
 - `blueprints/incident.json` — opened whenever a probe run's `decision != "healthy"`. Carries the human-approval state machine for both branches described in `CLAUDE.md` §1/§4 (`auto-heal-candidate` vs `escalate`). **Created in Port.**
-- `actions/*.json` — the Phase 4 human-in-the-loop self-service actions on `watchtowerIncident` (see "Actions" below). **Not yet created in Port** — paste each into Builder like the blueprints were.
+- `actions/*.json` — the Phase 4 human-in-the-loop self-service actions on `watchtowerIncident` (see "Actions" below). **Created in Port and verified live** — Approve auto-heal and Resolve incident were both executed against real incidents during the Phase 5 rehearsal.
 - `webhook-mapping.json` — the JQ entity-mapping array, **confirmed against the live webhook's "Test mapping" step**: a top-level array of `{ blueprint, operation, filter, entity: { identifier, title, properties, relations } }` objects (Port's actual schema — note this differs from the nested `integration.config.mappings` shape docs elsewhere imply; the mapping editor's own JSON skeleton is the source of truth). **Applied and saved in Port.**
 
 ## How it's wired up
@@ -20,7 +20,7 @@ This directory is the version-controlled export point for Port config, per the r
 
 If blueprints get edited further in Port's Builder, re-export them back into `blueprints/` so this directory stays the source of truth, per `CLAUDE.md` §2.
 
-## Actions (Phase 4 — defined in repo, pending creation in Port)
+## Actions (Phase 4 — defined in repo, created in Port, verified live)
 
 Three self-service day-2 actions on `watchtowerIncident`, all using Port's built-in **Upsert Entity** backend (`invocationMethod.type: "UPSERT_ENTITY"`) so no runner/webhook backend is needed for the status transitions:
 
@@ -30,7 +30,9 @@ Three self-service day-2 actions on `watchtowerIncident`, all using Port's built
 
 To create them: Port Builder → Self-service → new action → Edit JSON → paste each file → Save. If Port's editor rejects a field name (their action schema has drifted before — see the webhook-mapping note above), trust the editor's own JSON skeleton and adjust, then re-export back into `actions/` so this stays the source of truth.
 
-The **repair description** is drafted by the probe-runner itself (`services/probe-runner/src/repair.ts`) on the `auto-heal-candidate` branch only, posted in the webhook payload as `repairDescription`, and mapped into the incident by `webhook-mapping.json`. **The mapping change (the `repairDescription` line) must be re-pasted into the live webhook's mapping editor** — it was added after the mapping was last saved in Port.
+The **repair description** is drafted by the probe-runner itself (`services/probe-runner/src/repair.ts`) on the `auto-heal-candidate` branch only, posted in the webhook payload as `repairDescription`, and mapped into the incident by `webhook-mapping.json`. The updated mapping (including the `repairDescription` line) has been re-pasted into the live webhook and verified — a real incident landed with the description fully populated, newlines intact.
+
+Demo tip: day-2 action buttons live on the incident entity's **profile page** (or the row's `...` menu in Catalog), not prominently on the Self-service page.
 
 ## Deliberately not built yet
 
